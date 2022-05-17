@@ -176,13 +176,13 @@ function initLeafletFullscreen() {
     },
 
     _toggleState(this: L.Control.FullScreen) {
-      this._link.title = this._map.isFullscreen
-        ? this.options.title
-        : this.options.titleCancel;
-
-      this._map.isFullscreen
-        ? L.DomUtil.removeClass(this._link, "leaflet-fullscreen-on")
-        : L.DomUtil.addClass(this._link, "leaflet-fullscreen-on");
+      if (this._map.isFullscreen) {
+        this._link.title = this.options.titleCancel;
+        L.DomUtil.addClass(this._link, "leaflet-fullscreen-on");
+      } else {
+        this._link.title = this.options.title;
+        L.DomUtil.removeClass(this._link, "leaflet-fullscreen-on");
+      }
     },
 
     _handleFullscreenChange(this: L.Control.FullScreen) {
