@@ -1,73 +1,75 @@
-# Leaflet.Control.FullScreen
+# Leaflet.FullScreen2
 
-A super simple Leaflet plugin to add fullscreen buttons to your maps, designed for Javascript bundlers.
+A super-simple Leaflet plugin to add fullscreen buttons to your maps, designed for Javascript bundlers, filled to the brim with Typescript typings to aid your development experience.
 
 ## Introduction
 
 This plugin uses the native Fullscreen API with the lovely help of [`screenfull`](https://github.com/sindresorhus/screenfull.js).
 
-Please note that iPhones do **not** support this API. To support iOS, please import the helper function `isFullscreenSupported`, and set `forcePseudoFullscreen` to `true` if the function returns false.
+### Important considerations
+
+Please note that iPhones do **not** support this API. This plugin will automatically fall back to using a pseudo-fullscreen system instead for iOS devices.
+
+Also note that if you want to use the plugin on a map which embedded in an iframe, you **must** set the `allowfullscreen` attribute on your iframe.
+
+## Options
+
+All options are explained in detail within the Typescript typings bundled with this package. Descriptions and further info can be found within your IDE if it supports Typescript and TSDoc.
+
+| Option                  | Default              | Description                                                                                                                      |
+| ----------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `position`              | `'topleft'`          | Where to render the control on the leaflet map.                                                                                  |
+| `title`                 | `'Enter fullscreen'` | The `title` attribute for the fullscreen button when not in fullscreen mode.                                                     |
+| `titleCancel`           | `'Exit fullscreen'`  | The `title` attribute for the fullscreen button when in fullscreen mode.                                                         |
+| `content`               | `null`               | Override the content of the fullscreen button. Must be `null` (use an icon) or an HTML string.                                   |
+| `forceSeparateButton`   | `false`              | Force the fullscreen button to be rendered outside of the `ZoomControls` control.                                                |
+| `forcePseudoFullscreen` | `false`              | Use pseudo-fullscreen even if the browser supports the Fullscreen API.                                                           |
+| `fullscreenElement`     | `false`              | The element to make fullscreen when fullscreen is toggled. This is normally the map's container. (`false` automatically detects) |
+
+## Usage
+
+### Adding at map creation
 
 ```js
-import { isFullscreenSupported } from "leaflet.fullscreen2";
+import "leaflet.fullscreen2";
+import "leaflet.fullscreen2/leaflet.fullscreen2.css";
 
 // ...
 
-L.control
-  .fullscreen({
-    position: "topleft", // change the position of the button can be topleft, topright, bottomright or bottomleft, default topleft
-    title: "Enter fullscreen mode",
-    titleCancel: "Exit fullscreen mode",
-    forceSeparateButton: true, // force separate button to detach from zoom buttons, default false
-    forcePseudoFullscreen: true, // force use of pseudo full screen even if full screen API is available, default false
-    fullscreenElement: false, // Dom element to render in full screen, false by default, fallback to map._container
-  })
-  .addTo(map);
-```
-
-## How ?
-
-Include Control.FullScreen.js and Control.FullScreen.css in your page:
-
-```html
-<link rel="stylesheet" href="Control.FullScreen.css" />
-<script src="Control.FullScreen.js"></script>
-```
-
-Add the fullscreen control to the map:
-
-```js
-var map = new L.Map("map", {
-  fullscreenControl: true,
-  fullscreenControlOptions: {
+const map = L.map({
+  fullScreenControl: true,
+  fullScreenControlOptions: {
     position: "topleft",
+    forceSeparateButton: true,
   },
 });
 ```
 
-If your map has a zoomControl the fullscreen button will be added at the bottom of this one.
-
-If your map doesn't have a zoomControl the fullscreen button will be added to topleft corner of the map (same as the zoomControl).
-
-If you want to use the plugin on a map embedded in an iframe, don't forget to set `allowfullscreen` attribute on your iframe.
-
-**Events and options**:
+### Adding to an existing map
 
 ```js
-// create a fullscreen button and add it to the map
-L.control
-  .fullscreen({
-    position: "topleft", // change the position of the button can be topleft, topright, bottomright or bottomleft, default topleft
-    title: "Show me the fullscreen !", // change the title of the button, default Full Screen
-    titleCancel: "Exit fullscreen mode", // change the title of the button when fullscreen is on, default Exit Full Screen
-    content: null, // change the content of the button, can be HTML, default null
-    forceSeparateButton: true, // force separate button to detach from zoom buttons, default false
-    forcePseudoFullscreen: true, // force use of pseudo full screen even if full screen API is available, default false
-    fullscreenElement: false, // Dom element to render in full screen, false by default, fallback to map._container
-  })
-  .addTo(map);
+import "leaflet.fullscreen2";
+import "leaflet.fullscreen2/leaflet.fullscreen2.css";
 
-// events are fired when entering or exiting fullscreen.
+const map = L.map();
+
+// ...
+
+L.fullScreen({
+  position: "topleft",
+  forceSeparateButton: true,
+}).addTo(map);
+```
+
+### Map events & methods
+
+```js
+// Create a map with a fullscreen button
+const map = L.map({
+  fullScreenControl: true,
+});
+
+// Events are fired when entering or exiting fullscreen
 map.on("enterFullscreen", function () {
   console.log("entered fullscreen");
 });
@@ -76,14 +78,54 @@ map.on("exitFullscreen", function () {
   console.log("exited fullscreen");
 });
 
-// you can also toggle fullscreen from map object
+// You can also toggle fullscreen via a method on the map object
 map.toggleFullScreen();
 ```
 
-## Where ?
+### Usage with `react-leaflet`
 
-Source code : https://github.com/brunob/leaflet.fullscreen
+I created this library mainly for use in my React website, alongside `react-leaflet`. A simple code snippet example can be seen below for how this can be integrated with `react-leaflet`.
 
-Downloads : https://github.com/brunob/leaflet.fullscreen/releases
+```jsx
+import React, { useEffect } from "react";
 
-Demo : https://brunob.github.io/leaflet.fullscreen/
+import { MapContainer, useMap, useMapEvent } from "react-leaflet";
+
+export function MyLeafletMap() {
+  <MapContainer
+    style={{
+      height: "60vh",
+    }}
+    center={[51.505, -0.09]}
+    zoom={13}
+    attributionControl={false}
+  >
+    <FullscreenButton />
+  </MapContainer>;
+}
+
+function FullscreenButton() {
+  const map = useMap();
+
+  useEffect(() => {
+    // Only add the control if the map doesn't already have it
+    //
+    // This prevents issues where re-renders would cause duplication
+    // of the fullscreen button.
+    if (!map.fullScreenControl) {
+      L.fullScreen({
+        position: "topleft",
+        title: "Enter fullscreen mode",
+        titleCancel: "Exit fullscreen mode",
+        forceSeparateButton: true,
+      }).addTo(map);
+    }
+  });
+
+  useMapEvent("enterFullscreen", () => {
+    // You can also listen for the enter/exit fullscreen events
+  });
+
+  return null;
+}
+```

@@ -23,6 +23,7 @@ module.exports = {
       root: "L",
     },
   },
+  devtool: "source-map",
   output: {
     filename: "leaflet.fullscreen2.js",
     path: path.resolve(__dirname, "dist"),

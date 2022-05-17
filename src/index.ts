@@ -1,14 +1,6 @@
 import * as L from "leaflet";
 import screenfull from "screenfull";
 
-/**
- * Checks if the browser supports the Fullscreen API.
- *
- * This will most notably return `false` on iPhones as they do not
- * support the Fullscreen API.
- *
- * If `false`, you will have to use the psuedo fullscreen option.
- */
 export function isFullscreenSupported(): boolean {
   return screenfull.isEnabled;
 }
@@ -59,7 +51,7 @@ function initLeafletFullscreen() {
         this.toggleFullScreen,
         this
       );
-      this._map.fullscreenControl = this;
+      this._map.fullScreenControl = this;
 
       this._map.on("enterFullscreen exitFullscreen", this._toggleState, this);
 
@@ -156,49 +148,39 @@ function initLeafletFullscreen() {
       let map = this._map;
       map._exitFired = false;
 
-      if (map._isFullscreen) {
+      const container = this.options.fullscreenElement
+        ? this.options.fullscreenElement
+        : map.getContainer();
+
+      if (map.isFullscreen) {
         if (this.willUseFullscreen()) {
           screenfull.exit();
         } else {
-          L.DomUtil.removeClass(
-            this.options.fullscreenElement
-              ? this.options.fullscreenElement
-              : map.getContainer(),
-            "leaflet-pseudo-fullscreen"
-          );
+          L.DomUtil.removeClass(container, "leaflet-pseudo-fullscreen");
           map.invalidateSize();
         }
 
-        map.fire("exitFullscreen");
         map._exitFired = true;
-        map._isFullscreen = false;
+        map.isFullscreen = false;
+        map.fire("exitFullscreen");
       } else {
         if (screenfull.isEnabled && !this.options.forcePseudoFullscreen) {
-          screenfull.request(
-            this.options.fullscreenElement
-              ? this.options.fullscreenElement
-              : map.getContainer()
-          );
+          screenfull.request(container);
         } else {
-          L.DomUtil.addClass(
-            this.options.fullscreenElement
-              ? this.options.fullscreenElement
-              : map.getContainer(),
-            "leaflet-pseudo-fullscreen"
-          );
+          L.DomUtil.addClass(container, "leaflet-pseudo-fullscreen");
           map.invalidateSize();
         }
+        map.isFullscreen = true;
         map.fire("enterFullscreen");
-        map._isFullscreen = true;
       }
     },
 
     _toggleState(this: L.Control.FullScreen) {
-      this._link.title = this._map._isFullscreen
+      this._link.title = this._map.isFullscreen
         ? this.options.title
         : this.options.titleCancel;
 
-      this._map._isFullscreen
+      this._map.isFullscreen
         ? L.DomUtil.removeClass(this._link, "leaflet-fullscreen-on")
         : L.DomUtil.addClass(this._link, "leaflet-fullscreen-on");
     },
@@ -208,22 +190,22 @@ function initLeafletFullscreen() {
       map.invalidateSize();
 
       if (!screenfull.isFullscreen && !map._exitFired) {
-        map.fire("exitFullscreen");
         map._exitFired = true;
-        map._isFullscreen = false;
+        map.isFullscreen = false;
+        map.fire("exitFullscreen");
       }
     },
   }) as typeof L.Control.FullScreen;
 
   L.Map.include({
     toggleFullscreen(this: L.Map) {
-      this.fullscreenControl?.toggleFullScreen();
+      this.fullScreenControl?.toggleFullScreen();
     },
   });
 
   L.Map.addInitHook(function (this: L.Map) {
-    if (this.options.fullscreenControl) {
-      this.addControl(L.fullScreen(this.options.fullscreenControlOptions));
+    if (this.options.fullScreenControl) {
+      this.addControl(L.fullScreen(this.options.fullScreenControlOptions));
     }
   });
 
