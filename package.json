@@ -1,6 +1,6 @@
 {
   "name": "leaflet.fullscreen2",
-  "version": "0.0.11",
+  "version": "1.0.0",
   "description": "Simple plugin for Leaflet that adds a fullscreen button to your maps.",
   "license": "MIT",
   "module": "./dist/leaflet.fullscreen2.js",
